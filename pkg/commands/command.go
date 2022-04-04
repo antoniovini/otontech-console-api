@@ -30,7 +30,11 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB) {
 		middlewares.RoleMiddleware([]string{"admin"}),
 		h.CreateCommand,
 	)
-	routes.GET("/:id", h.GetCommand)
+	routes.GET(
+		"/:id",
+		middlewares.JwtAuthMiddleware(false),
+		h.GetCommand,
+	)
 	routes.PATCH("/:id",
 		middlewares.JwtAuthMiddleware(true),
 		middlewares.RoleMiddleware([]string{"admin"}),
@@ -95,11 +99,34 @@ func (h CommandHandler) GetCommands(c *gin.Context) {
 }
 
 func (h CommandHandler) GetCommand(c *gin.Context) {
+	userContext, exists := c.Get("user")
 	var command models.Command
 
-	if err := h.DB.Where("unique_id = ?", c.Param("id")).First(&command).Error; err != nil {
+	if err := h.DB.Preload("Roles").Where("unique_id = ?", c.Param("id")).First(&command).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
 		return
+	}
+
+	var userRoles []string
+
+	if exists {
+		u := userContext.(models.User)
+		for i := range u.Roles {
+			userRoles = append(userRoles, u.Roles[i].Name)
+		}
+	} else {
+		userRoles = append(userRoles, "default")
+	}
+
+	for i := range command.Roles {
+		idx := sort.Search(len(userRoles), func(j int) bool {
+			return userRoles[j] == command.Roles[i].Name
+		})
+
+		if !(idx < len(userRoles) && userRoles[idx] == command.Roles[i].Name) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": command})
