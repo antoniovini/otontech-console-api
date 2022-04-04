@@ -3,6 +3,8 @@ package commands
 import (
 	"net/http"
 	"otontech/console-api/models"
+	"otontech/console-api/utils/middlewares"
+	"sort"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -17,12 +19,29 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB) {
 		DB: db,
 	}
 
-	routes := r.Group("/commands")
-	routes.GET("/", h.GetCommands)
-	routes.POST("/", h.CreateCommand)
+	routes := r.Group("/api/v1/commands")
+	routes.GET(
+		"/",
+		middlewares.JwtAuthMiddleware(false),
+		h.GetCommands,
+	)
+	routes.POST("/",
+		middlewares.JwtAuthMiddleware(true),
+		middlewares.RoleMiddleware([]string{"admin"}),
+		h.CreateCommand,
+	)
 	routes.GET("/:id", h.GetCommand)
-	routes.PATCH("/:id", h.UpdateCommand)
-	routes.DELETE("/:id", h.DeleteCommand)
+	routes.PATCH("/:id",
+		middlewares.JwtAuthMiddleware(true),
+		middlewares.RoleMiddleware([]string{"admin"}),
+		h.UpdateCommand,
+	)
+	routes.DELETE(
+		"/:id",
+		middlewares.JwtAuthMiddleware(true),
+		middlewares.RoleMiddleware([]string{"admin"}),
+		h.DeleteCommand,
+	)
 }
 
 func (h CommandHandler) CreateCommand(c *gin.Context) {
@@ -42,10 +61,37 @@ func (h CommandHandler) CreateCommand(c *gin.Context) {
 }
 
 func (h CommandHandler) GetCommands(c *gin.Context) {
+	userContext, exists := c.Get("user")
 	var commands []models.Command
-	h.DB.Find(&commands)
 
-	c.JSON(http.StatusOK, gin.H{"data": commands})
+	h.DB.Model(&models.Command{}).Preload("Roles").Find(&commands)
+
+	var userCommands []models.Command
+	var userRoles []string
+
+	if exists {
+		u := userContext.(models.User)
+		for i := range u.Roles {
+			userRoles = append(userRoles, u.Roles[i].Name)
+		}
+	} else {
+		userRoles = append(userRoles, "default")
+	}
+
+	for i := range commands {
+		for j := range commands[i].Roles {
+			idx := sort.Search(len(userRoles), func(k int) bool {
+				return userRoles[k] == commands[i].Roles[j].Name
+			})
+
+			if idx < len(userRoles) && userRoles[idx] == commands[i].Roles[j].Name {
+				userCommands = append(userCommands, commands[i])
+				break
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": userCommands})
 }
 
 func (h CommandHandler) GetCommand(c *gin.Context) {

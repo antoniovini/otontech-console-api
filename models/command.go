@@ -23,6 +23,7 @@ type Command struct {
 	Description string    `json:"description"`
 	Activator   string    `json:"activator" gorm:"type:varchar(16);not null;unique"`
 	Action      string    `json:"action" gorm:"type:varchar(16)"`
+	Roles       []Role    `gorm:"many2many:command_roles;"`
 }
 
 func (command *Command) BeforeCreate(db *gorm.DB) (err error) {

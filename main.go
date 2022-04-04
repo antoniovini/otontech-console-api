@@ -1,17 +1,30 @@
 package main
 
 import (
-	commands "otontech/console-api/controllers"
+	"log"
 	"otontech/console-api/models"
+	"otontech/console-api/pkg/auth"
+	"otontech/console-api/pkg/commands"
+	"otontech/console-api/pkg/roles"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
 	router := gin.Default()
 
 	db := models.ConnectDatabase()
+
 	commands.RegisterRoutes(router, db)
+	auth.RegisterRoutes(router, db)
+	roles.RegisterRoutes(router, db)
 
 	router.Run("localhost:8000")
 }
