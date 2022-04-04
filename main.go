@@ -6,6 +6,7 @@ import (
 	"otontech/console-api/pkg/auth"
 	"otontech/console-api/pkg/commands"
 	"otontech/console-api/pkg/roles"
+	"otontech/console-api/utils/middlewares"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -22,6 +23,7 @@ func main() {
 
 	db := models.ConnectDatabase()
 
+	router.Use(middlewares.CORSMiddleware())
 	commands.RegisterRoutes(router, db)
 	auth.RegisterRoutes(router, db)
 	roles.RegisterRoutes(router, db)
