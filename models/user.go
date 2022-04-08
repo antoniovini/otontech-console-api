@@ -75,9 +75,8 @@ func (u *User) MaxRoleLevel() uint {
 }
 
 func (u *User) SaveUser() (*User, error) {
-	var err error
-	err = DB.Create(&u).Error
-	if err != nil {
+	user := &User{Username: u.Username, Password: u.Password}
+	if err := DB.Create(&user).Error; err != nil {
 		return &User{}, err
 	}
 	return u, nil
@@ -111,9 +110,13 @@ func (u *User) BeforeCreate(db *gorm.DB) (err error) {
 	u.Password = string(hashedPassword)
 	u.Username = html.EscapeString(strings.TrimSpace(u.Username))
 
-	defaultRole := Role{}
+	defaultRole := Role{
+		Name:        "default",
+		Description: "Default role",
+		Level:       0,
+	}
 
-	if err := db.Model(&Role{}).Where("name = ?", "default").Take(&defaultRole).Error; err != nil {
+	if err := db.Model(&Role{}).Where("name = ?", "default").FirstOrCreate(&defaultRole).Error; err != nil {
 		return err
 	}
 
