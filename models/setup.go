@@ -15,7 +15,29 @@ func ConnectDatabase() *gorm.DB {
 		panic("Failed to connect to database! " + err.Error())
 	}
 
-	database.AutoMigrate(&Command{}, &User{}, &Role{})
+	database.AutoMigrate(&Command{}, &User{}, &Role{}, &Step{}, &Param{})
+
+	defaultRoles := []Role{
+		{
+			Name:        "default",
+			Description: "Default role",
+			Level:       0,
+		},
+	}
+
+	if err := database.Model(&Role{}).Create(&defaultRoles).Error; err != nil {
+		panic("Failed")
+	}
+
+	defaultCommands := []Command{
+		{
+			Activator: "command",
+			Action:    "create",
+			Roles: []Role{
+				{},
+			},
+		},
+	}
 
 	DB = database
 	return database
