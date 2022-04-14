@@ -23,20 +23,15 @@ func ConnectDatabase() *gorm.DB {
 			Description: "Default role",
 			Level:       0,
 		},
-	}
-
-	if err := database.Model(&Role{}).Create(&defaultRoles).Error; err != nil {
-		panic("Failed")
-	}
-
-	defaultCommands := []Command{
 		{
-			Activator: "command",
-			Action:    "create",
-			Roles: []Role{
-				{},
-			},
+			Name:        "admin",
+			Description: "Admin role",
+			Level:       100,
 		},
+	}
+
+	for i := range defaultRoles {
+		database.Model(&Role{}).Create(&defaultRoles[i])
 	}
 
 	DB = database

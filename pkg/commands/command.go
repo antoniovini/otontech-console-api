@@ -54,7 +54,13 @@ func (h CommandHandler) CreateCommand(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	command := models.Command{Description: input.Description, Activator: input.Activator}
+	command := models.Command{
+		Description: input.Description,
+		Activator:   input.Activator,
+		Action:      input.Action,
+		Steps:       input.Steps,
+		Roles:       input.Roles,
+	}
 
 	if results := h.DB.Create(&command); results.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": results.Error.Error()})
@@ -145,7 +151,15 @@ func (h CommandHandler) UpdateCommand(c *gin.Context) {
 		return
 	}
 
-	if results := h.DB.Model(&command).Updates(&models.Command{Activator: input.Activator, Description: input.Description, Action: input.Action}); results.Error != nil {
+	updatedCommand := models.Command{
+		Activator:   input.Activator,
+		Description: input.Description,
+		Action:      input.Action,
+		Steps:       input.Steps,
+		Roles:       input.Roles,
+	}
+
+	if results := h.DB.Model(&command).Updates(&updatedCommand); results.Error != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": results.Error.Error()})
 		return
 	}
