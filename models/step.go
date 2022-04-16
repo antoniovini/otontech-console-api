@@ -17,5 +17,5 @@ type UpdateStepInput struct {
 type Step struct {
 	gorm.Model
 	Name   string  `json:"name" gorm:"type:varchar(255);not null;unique"`
-	Params []Param `gorm:"many2many:step_params;"`
+	Params []Param `json:"params" gorm:"many2many:step_params;"`
 }

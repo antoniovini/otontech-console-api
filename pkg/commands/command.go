@@ -54,12 +54,25 @@ func (h CommandHandler) CreateCommand(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	var roles []models.Role
+
+	for i := range input.Roles {
+		roles = append(roles, models.Role{Name: input.Roles[i]})
+	}
+
+	if err := h.DB.Model(&models.Role{}).Find(&roles).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	command := models.Command{
 		Description: input.Description,
 		Activator:   input.Activator,
 		Action:      input.Action,
 		Steps:       input.Steps,
-		Roles:       input.Roles,
+		Roles:       roles,
+		Args:        input.Args,
 	}
 
 	if results := h.DB.Create(&command); results.Error != nil {
@@ -74,7 +87,7 @@ func (h CommandHandler) GetCommands(c *gin.Context) {
 	userContext, exists := c.Get("user")
 	var commands []models.Command
 
-	h.DB.Model(&models.Command{}).Preload("Roles").Find(&commands)
+	h.DB.Model(&models.Command{}).Preload("Roles").Preload("Steps").Preload("Steps.Params").Preload("Args").Find(&commands)
 
 	var userCommands []models.Command
 	var userRoles []string
@@ -108,7 +121,7 @@ func (h CommandHandler) GetCommand(c *gin.Context) {
 	userContext, exists := c.Get("user")
 	var command models.Command
 
-	if err := h.DB.Preload("Roles").Where("unique_id = ?", c.Param("id")).First(&command).Error; err != nil {
+	if err := h.DB.Preload("Roles").Preload("Steps").Preload("Args").Where("unique_id = ?", c.Param("id")).First(&command).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
 		return
 	}
@@ -151,12 +164,24 @@ func (h CommandHandler) UpdateCommand(c *gin.Context) {
 		return
 	}
 
+	var roles []models.Role
+
+	for i := range input.Roles {
+		roles = append(roles, models.Role{Name: input.Roles[i]})
+	}
+
+	if err := h.DB.Model(&models.Role{}).Find(&roles).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	updatedCommand := models.Command{
 		Activator:   input.Activator,
 		Description: input.Description,
 		Action:      input.Action,
 		Steps:       input.Steps,
-		Roles:       input.Roles,
+		Roles:       roles,
+		Args:        input.Args,
 	}
 
 	if results := h.DB.Model(&command).Updates(&updatedCommand); results.Error != nil {

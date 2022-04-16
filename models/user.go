@@ -28,7 +28,7 @@ type User struct {
 	gorm.Model
 	Username string `gorm:"size:255;not null;unique" json:"username"`
 	Password string `gorm:"size:255;not null;" json:"password"`
-	Roles    []Role `gorm:"many2many:user_roles;"`
+	Roles    []Role `json:"roles" gorm:"many2many:user_roles;"`
 }
 
 func VerifyPassword(password, hashedPassword string) error {
