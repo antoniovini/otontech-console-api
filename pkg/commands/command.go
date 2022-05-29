@@ -48,6 +48,14 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB) {
 	)
 }
 
+// CreateCommand godoc
+// @Summary Create a new Command
+// @Description Create a new command to be used in application
+// @Tags commands
+// @Produce json
+// @Param command body interfaces.CreateCommand true "Command JSON"
+// @Success 200 {object} interfaces.Command
+// @Router /commands [post]
 func (h CommandHandler) CreateCommand(c *gin.Context) {
 	var input models.CreateCommandInput
 	if err := c.ShouldBindJSON(&input); err != nil {
