@@ -24,6 +24,7 @@ func ConnectDatabase() *gorm.DB {
 		&Step{},
 		&Param{},
 		&Arg{},
+		&Program{},
 	)
 
 	defaultRoles := []Role{
