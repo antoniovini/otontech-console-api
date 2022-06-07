@@ -9,8 +9,6 @@ import (
 	"otontech/console-api/pkg/roles"
 	"otontech/console-api/utils/middlewares"
 
-	_ "otontech/console-api/docs"
-
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
