@@ -12,7 +12,7 @@ COPY . /go/src/go-docker-dev.to
 RUN apk update && apk add --no-cache git
 RUN go get .
 
-RUN go build go-docker-dev.to/app
+RUN go build go-docker-dev.to
 
 EXPOSE $PORT
 
