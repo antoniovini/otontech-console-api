@@ -7,7 +7,7 @@ ENV PORT=8000
 
 WORKDIR /go/src/go-docker-dev.to
 
-COPY . /go/src/go-docker-dev.to
+COPY . .
 
 RUN apk update && apk add --no-cache git
 RUN go get .
