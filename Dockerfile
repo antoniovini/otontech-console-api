@@ -1,19 +1,28 @@
-FROM golang:alpine
+ARG GO_VERSION=1.11
 
-#MAINTAINER Maintainer
+FROM golang:${GO_VERSION}-alpine AS builder
 
-ENV GIN_MODE=release
-ENV PORT=8000
+RUN apk update && apk add alpine-sdk git && rm -rf /var/cache/apk/*
 
-WORKDIR /go/src/go-docker-dev.to
+RUN mkdir -p /api
+WORKDIR /api
+
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
 
 COPY . .
-
-RUN apk update && apk add --no-cache git
-RUN go get .
-
 RUN go build -o ./app ./main.go
 
-EXPOSE $PORT
+FROM alpine:latest
+
+RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+
+RUN mkdir -p /api
+WORKDIR /api
+COPY --from=builder /api/app .
+COPY --from=builder /api/test.db .
+
+EXPOSE 8080
 
 ENTRYPOINT ["./app"]
