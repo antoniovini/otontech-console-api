@@ -17,6 +17,6 @@ build:
      - docker build --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:latest .
      - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
      - docker push $CI_REGISTRY_IMAGE:latest
-     - curl -X POST https://191.252.212.10:9443/api/webhooks/c40cb075-3155-42a8-913f-f10c792fd2ed
+     - curl -X POST http://191.252.212.10:9443/api/webhooks/c40cb075-3155-42a8-913f-f10c792fd2ed
   only:
     - master # Only run on master branch
