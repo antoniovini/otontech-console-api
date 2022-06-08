@@ -23,6 +23,7 @@ WORKDIR /api
 COPY --from=builder /api/app .
 COPY --from=builder /api/.env .
 
-EXPOSE 8080
+EXPOSE 80
+EXPOSE 443
 
 ENTRYPOINT ["./app"]
