@@ -31,5 +31,5 @@ func main() {
 	roles.RegisterRoutes(router, db)
 	programs.RegisterRoutes(router, db)
 
-	router.Run(":80")
+	router.Run(":80", ":443")
 }
