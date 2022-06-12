@@ -6,7 +6,6 @@ import (
 	"otontech/console-api/pkg/auth"
 	"otontech/console-api/pkg/commands"
 	"otontech/console-api/pkg/programs"
-	"otontech/console-api/pkg/roles"
 	"otontech/console-api/utils/middlewares"
 
 	"github.com/gin-gonic/gin"
@@ -28,7 +27,7 @@ func main() {
 
 	commands.RegisterRoutes(router, db)
 	auth.RegisterRoutes(router, db)
-	roles.RegisterRoutes(router, db)
+	// roles.RegisterRoutes(router, db)
 	programs.RegisterRoutes(router, db)
 
 	router.Run(":443")

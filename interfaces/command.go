@@ -4,8 +4,7 @@ type CreateCommand struct {
 	Description string
 	Activator   string
 	Action      string
-	Roles       []string
-	Steps       []Step
+	Role        string
 	Args        []Arg
 }
 
@@ -13,8 +12,7 @@ type UpdateCommand struct {
 	Description string
 	Activator   string
 	Action      string
-	Roles       []string
-	Steps       []Step
+	Role        string
 	Args        []Arg
 }
 
@@ -24,7 +22,6 @@ type Command struct {
 	Description string
 	Activator   string
 	Action      string
-	Roles       []Role
-	Steps       []Step
+	Role        Role
 	Args        []Arg
 }

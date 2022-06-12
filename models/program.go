@@ -5,19 +5,20 @@ type Program struct {
 	Name        string `json:"name" gorm:"type:varchar(16);not null;unique"`
 	Description string `json:"description"`
 	Url         string `json:"url"`
-	Roles       []Role `json:"roles" gorm:"many2many:program_roles;"`
+	Role        Role   `json:"role"`
+	RoleId      uint
 }
 
 type CreateProgram struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description" binding:"required"`
 	Url         string `json:"url" binding:"required"`
-	Roles       []Role `json:"roles" binding:"required"`
+	Role        Role   `json:"role" binding:"required"`
 }
 
 type UpdateProgram struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Url         string `json:"url"`
-	Roles       []Role `json:"roles"`
+	Role        Role   `json:"role"`
 }

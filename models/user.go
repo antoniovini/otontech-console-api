@@ -4,7 +4,6 @@ import (
 	"errors"
 	"html"
 	"otontech/console-api/utils/token"
-	"sort"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -28,7 +27,8 @@ type User struct {
 	gorm.Model
 	Username string `gorm:"size:255;not null;unique" json:"username"`
 	Password string `gorm:"size:255;not null;" json:"password"`
-	Roles    []Role `json:"roles" gorm:"many2many:user_roles;"`
+	Role     Role   `json:"role"`
+	RoleId   uint
 }
 
 func VerifyPassword(password, hashedPassword string) error {
@@ -37,7 +37,7 @@ func VerifyPassword(password, hashedPassword string) error {
 
 func GetUserById(uid uint) (User, error) {
 	var u User
-	if err := DB.Preload("Roles").First(&u, uid).Error; err != nil {
+	if err := DB.Preload("Role").First(&u, uid).Error; err != nil {
 		return u, errors.New("User not found!")
 	}
 	u.PrepareGive()
@@ -46,32 +46,15 @@ func GetUserById(uid uint) (User, error) {
 
 func GetUserByUsername(username string) (User, error) {
 	var u User
-	if err := DB.Preload("Roles").First(&u, User{Username: username}).Error; err != nil {
+	if err := DB.Preload("Role").First(&u, User{Username: username}).Error; err != nil {
 		return u, errors.New("User not found!")
 	}
 	u.PrepareGive()
 	return u, nil
 }
 
-func (u *User) GetRolesString() []string {
-	var roles []string
-	for i := range u.Roles {
-		roles = append(roles, u.Roles[i].Name)
-	}
-	return roles
-}
-
 func (u *User) PrepareGive() {
 	u.Password = ""
-}
-
-func (u *User) MaxRoleLevel() uint {
-	var levels []int = make([]int, len(u.Roles))
-	for i := range levels {
-		levels[i] = int(u.Roles[i].Level)
-	}
-	sort.Ints(levels)
-	return uint(levels[len(levels)-1])
 }
 
 func (u *User) SaveUser() (*User, error) {
@@ -120,7 +103,7 @@ func (u *User) BeforeCreate(db *gorm.DB) (err error) {
 		return err
 	}
 
-	u.Roles = append(u.Roles, defaultRole)
+	u.Role = defaultRole
 
 	return nil
 }

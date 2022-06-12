@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"otontech/console-api/models"
 	"otontech/console-api/utils/middlewares"
-	"sort"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -25,92 +24,76 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB) {
 		middlewares.JwtAuthMiddleware(false),
 		h.GetCommands,
 	)
-	routes.POST("/",
-		middlewares.JwtAuthMiddleware(true),
-		middlewares.RoleMiddleware([]string{"admin"}),
-		h.CreateCommand,
-	)
+	// routes.POST("/",
+	// 	middlewares.JwtAuthMiddleware(true),
+	// 	middlewares.RoleMiddleware([]string{"admin"}),
+	// 	h.CreateCommand,
+	// )
 	routes.GET(
 		"/:id",
 		middlewares.JwtAuthMiddleware(false),
 		h.GetCommand,
 	)
-	routes.PATCH("/:id",
-		middlewares.JwtAuthMiddleware(true),
-		middlewares.RoleMiddleware([]string{"admin"}),
-		h.UpdateCommand,
-	)
-	routes.DELETE(
-		"/:id",
-		middlewares.JwtAuthMiddleware(true),
-		middlewares.RoleMiddleware([]string{"admin"}),
-		h.DeleteCommand,
-	)
+	// routes.PATCH("/:id",
+	// 	middlewares.JwtAuthMiddleware(true),
+	// 	middlewares.RoleMiddleware([]string{"admin"}),
+	// 	h.UpdateCommand,
+	// )
+	// routes.DELETE(
+	// 	"/:id",
+	// 	middlewares.JwtAuthMiddleware(true),
+	// 	middlewares.RoleMiddleware([]string{"admin"}),
+	// 	h.DeleteCommand,
+	// )
 }
 
-func (h CommandHandler) CreateCommand(c *gin.Context) {
-	var input models.CreateCommandInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+// func (h CommandHandler) CreateCommand(c *gin.Context) {
+// 	var input models.CreateCommandInput
+// 	if err := c.ShouldBindJSON(&input); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
 
-	var roles []models.Role
+// 	var role models.Role = models.Role{Name: input.Role}
 
-	for i := range input.Roles {
-		roles = append(roles, models.Role{Name: input.Roles[i]})
-	}
+// 	if err := h.DB.Model(&models.Role{}).Find(&role).Error; err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
 
-	if err := h.DB.Model(&models.Role{}).Find(&roles).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+// 	command := models.Command{
+// 		Description: input.Description,
+// 		Activator:   input.Activator,
+// 		Action:      input.Action,
+// 		Role:        role,
+// 		Args:        input.Args,
+// 	}
 
-	command := models.Command{
-		Description: input.Description,
-		Activator:   input.Activator,
-		Action:      input.Action,
-		Steps:       input.Steps,
-		Roles:       roles,
-		Args:        input.Args,
-	}
+// 	if results := h.DB.Create(&command); results.Error != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": results.Error.Error()})
+// 		return
+// 	}
 
-	if results := h.DB.Create(&command); results.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": results.Error.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": command})
-}
+// 	c.JSON(http.StatusOK, gin.H{"data": command})
+// }
 
 func (h CommandHandler) GetCommands(c *gin.Context) {
 	userContext, exists := c.Get("user")
 	var commands []models.Command
 
-	h.DB.Model(&models.Command{}).Preload("Roles").Preload("Steps").Preload("Steps.Params").Preload("Args").Find(&commands)
+	h.DB.Model(&models.Command{}).Preload("Role").Preload("Steps").Preload("Steps.Params").Preload("Args").Find(&commands)
 
 	var userCommands []models.Command
-	var userRoles []string
+	var userLevel uint = 0
 
 	if exists {
 		u := userContext.(models.User)
-		for i := range u.Roles {
-			userRoles = append(userRoles, u.Roles[i].Name)
-		}
-	} else {
-		userRoles = append(userRoles, "default")
+		userLevel = u.Role.Level
 	}
 
-	for i := range commands {
-		for j := range commands[i].Roles {
-			idx := sort.Search(len(userRoles), func(k int) bool {
-				return userRoles[k] == commands[i].Roles[j].Name
-			})
-
-			if idx < len(userRoles) && userRoles[idx] == commands[i].Roles[j].Name {
-				userCommands = append(userCommands, commands[i])
-				break
-			}
+	for _, c := range commands {
+		if c.Role.Level <= userLevel {
+			userCommands = append(userCommands, c)
 		}
 	}
 
@@ -121,83 +104,73 @@ func (h CommandHandler) GetCommand(c *gin.Context) {
 	userContext, exists := c.Get("user")
 	var command models.Command
 
-	if err := h.DB.Preload("Roles").Preload("Steps").Preload("Args").Where("unique_id = ?", c.Param("id")).First(&command).Error; err != nil {
+	if err := h.DB.Preload("Role").Preload("Steps").Preload("Args").Where("unique_id = ?", c.Param("id")).First(&command).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
 		return
 	}
 
-	var userRoles []string
+	var userLevel uint = 0
 
 	if exists {
 		u := userContext.(models.User)
-		for i := range u.Roles {
-			userRoles = append(userRoles, u.Roles[i].Name)
-		}
-	} else {
-		userRoles = append(userRoles, "default")
+		userLevel = u.Role.Level
 	}
 
-	for i := range command.Roles {
-		idx := sort.Search(len(userRoles), func(j int) bool {
-			return userRoles[j] == command.Roles[i].Name
-		})
-
-		if !(idx < len(userRoles) && userRoles[idx] == command.Roles[i].Name) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
-			return
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": command})
-}
-
-func (h CommandHandler) UpdateCommand(c *gin.Context) {
-	var command models.Command
-	if err := h.DB.Where("unique_id = ?", c.Param("id")).First(&command).Error; err != nil {
+	if command.Role.Level > userLevel {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
 		return
 	}
 
-	var input models.UpdateCommandInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	var roles []models.Role
-
-	for i := range input.Roles {
-		roles = append(roles, models.Role{Name: input.Roles[i]})
-	}
-
-	if err := h.DB.Model(&models.Role{}).Find(&roles).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	updatedCommand := models.Command{
-		Activator:   input.Activator,
-		Description: input.Description,
-		Action:      input.Action,
-		Steps:       input.Steps,
-		Roles:       roles,
-		Args:        input.Args,
-	}
-
-	if results := h.DB.Model(&command).Updates(&updatedCommand); results.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": results.Error.Error()})
-		return
-	}
 	c.JSON(http.StatusOK, gin.H{"data": command})
 }
 
-func (h CommandHandler) DeleteCommand(c *gin.Context) {
-	var command models.Command
-	if err := h.DB.Where("unique_id = ?", c.Param("id")).First(&command).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+// func (h CommandHandler) UpdateCommand(c *gin.Context) {
+// 	var command models.Command
+// 	if err := h.DB.Where("unique_id = ?", c.Param("id")).First(&command).Error; err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+// 		return
+// 	}
 
-	h.DB.Delete(&command)
-	c.JSON(http.StatusOK, gin.H{"data": true})
-}
+// 	var input models.UpdateCommandInput
+// 	if err := c.ShouldBindJSON(&input); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	var roles []models.Role
+
+// 	for i := range input.Roles {
+// 		roles = append(roles, models.Role{Name: input.Roles[i]})
+// 	}
+
+// 	if err := h.DB.Model(&models.Role{}).Find(&roles).Error; err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	updatedCommand := models.Command{
+// 		Activator:   input.Activator,
+// 		Description: input.Description,
+// 		Action:      input.Action,
+// 		Steps:       input.Steps,
+// 		Roles:       roles,
+// 		Args:        input.Args,
+// 	}
+
+// 	if results := h.DB.Model(&command).Updates(&updatedCommand); results.Error != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": results.Error.Error()})
+// 		return
+// 	}
+// 	c.JSON(http.StatusOK, gin.H{"data": command})
+// }
+
+// func (h CommandHandler) DeleteCommand(c *gin.Context) {
+// 	var command models.Command
+// 	if err := h.DB.Where("unique_id = ?", c.Param("id")).First(&command).Error; err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	h.DB.Delete(&command)
+// 	c.JSON(http.StatusOK, gin.H{"data": true})
+// }

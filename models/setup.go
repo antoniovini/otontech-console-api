@@ -21,8 +21,6 @@ func ConnectDatabase() *gorm.DB {
 		&Command{},
 		&User{},
 		&Role{},
-		&Step{},
-		&Param{},
 		&Arg{},
 		&Program{},
 	)
