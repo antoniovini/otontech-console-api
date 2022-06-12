@@ -17,6 +17,6 @@ build:
      - docker build --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:latest .
      - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
      - docker push $CI_REGISTRY_IMAGE:latest
-     - curl -X POST http://otontech.net:9443/api/webhooks/56ca6afe-458d-4fc2-913e-c870073f59bb
-  only:
-    - master # Only run on master branch
+     - curl --insecure -X POST https://otontech.net:9443/api/webhooks/05493504-56bd-4f5f-af1e-ab3b9d29f4cb
+  # only:
+  #   - master # Only run on master branch
