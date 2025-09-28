@@ -4,7 +4,6 @@ import (
 	"log"
 	"otontech/console-api/models"
 	"otontech/console-api/pkg/auth"
-	"otontech/console-api/pkg/commands"
 	"otontech/console-api/pkg/programs"
 	"otontech/console-api/utils/middlewares"
 
@@ -25,7 +24,6 @@ func main() {
 
 	router.Use(middlewares.CORSMiddleware())
 
-	commands.RegisterRoutes(router, db)
 	auth.RegisterRoutes(router, db)
 	// roles.RegisterRoutes(router, db)
 	programs.RegisterRoutes(router, db)

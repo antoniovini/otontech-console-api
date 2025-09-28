@@ -28,7 +28,7 @@ type User struct {
 	Username string `gorm:"size:255;not null;unique" json:"username"`
 	Password string `gorm:"size:255;not null;" json:"password"`
 	Role     Role   `json:"role"`
-	RoleId   uint
+	RoleID   uint
 }
 
 func VerifyPassword(password, hashedPassword string) error {
@@ -93,13 +93,9 @@ func (u *User) BeforeCreate(db *gorm.DB) (err error) {
 	u.Password = string(hashedPassword)
 	u.Username = html.EscapeString(strings.TrimSpace(u.Username))
 
-	defaultRole := Role{
-		Name:        "default",
-		Description: "Default role",
-		Level:       0,
-	}
+	defaultRole := Role{}
 
-	if err := db.Model(&Role{}).Where("name = ?", "default").FirstOrCreate(&defaultRole).Error; err != nil {
+	if err := db.Model(&Role{}).Where("id = ?", 1).First(&defaultRole).Error; err != nil {
 		return err
 	}
 

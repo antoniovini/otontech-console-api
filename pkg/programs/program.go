@@ -36,7 +36,7 @@ func (h ProgramHandler) GetPrograms(c *gin.Context) {
 	userContext, exists := c.Get("user")
 	var programs []models.Program
 
-	h.DB.Model(&models.Program{}).Preload("Role").Find(&programs)
+	h.DB.Model(&models.Program{}).Find(&programs)
 
 	var userPrograms []models.Program
 	var userLevel uint = 0
@@ -47,7 +47,7 @@ func (h ProgramHandler) GetPrograms(c *gin.Context) {
 	}
 
 	for _, p := range programs {
-		if p.Role.Level <= userLevel {
+		if p.RequiredLevel <= userLevel {
 			userPrograms = append(userPrograms, p)
 		}
 	}
@@ -59,7 +59,7 @@ func (h ProgramHandler) GetProgram(c *gin.Context) {
 	userContext, exists := c.Get("user")
 	var program models.Program
 
-	if err := h.DB.Preload("Role").Where("name = ?", c.Param("name")).First(&program).Error; err != nil {
+	if err := h.DB.Where("name = ?", c.Param("name")).First(&program).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Program not found!"})
 		return
 	}
@@ -73,7 +73,7 @@ func (h ProgramHandler) GetProgram(c *gin.Context) {
 		userLevel = u.Role.Level
 	}
 
-	if program.Role.Level > userLevel {
+	if program.RequiredLevel > userLevel {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Program not found!"})
 		return
 	}

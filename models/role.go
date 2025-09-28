@@ -11,7 +11,7 @@ type RoleManagmentInput struct {
 
 type Role struct {
 	gorm.Model
-	Name        string `json:"name" gorm:"type:varchar(16);unique;not null"`
+	Name        string `json:"name" gorm:"type:varchar(32);unique;not null"`
 	Description string `json:"description" gorm:"size:255"`
 	Level       uint   `json:"level" gorm:"not null"`
 }
